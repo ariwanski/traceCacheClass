@@ -23,11 +23,8 @@ class tcLine
     int   valid;
     int   branchFlags;
 
-    // fields for building a trace in this line
-    int insnCount; // current count of insns in trace being built
-    int BBCount; // current count of BB's in trace being built
-    int branchInsnCount; // count of insns since last branch insn was seen
-    int buildingTrace; // 1 = currently building a trace, 0 = otherwise
+    int insnCount; // number of instructions in this line
+    int BBCount; // number of basic blocks in this line
 
     // Constructor
     tcLine() {
@@ -38,8 +35,6 @@ class tcLine
       // set fields for building a trace
       this->insnCount = 0;
       this->BBCount = 0;
-      this->branchInsnCount = 0;
-      this->buildingTrace = 0;
     }
 };
 
@@ -54,13 +49,14 @@ class traceCache
     // fields describing the trace cache
     tcLine* line;
     int    size; // size of the cache in terms of lines
-    int    numInsns; // max number of insns in one cache line
-    int    numBBs; // max number of basic blocks in one cache line
+    int    maxNumInsns; // max number of insns in one cache line
+    int    maxNumBBs; // max number of basic blocks in one cache line
 
     // fields for building a trace in the trace cache
     int buildingTrace; // 1 = currently building a trace, 0 = otherwise
     int buildLineIndex; // hold line # is trace cache that trace
                         // is being built for
+    tcLine* buildLine; // used to hold stats on tc line currently being built
 
 
     // Constructor
@@ -72,44 +68,70 @@ class traceCache
         this->assoc = assoc;
         // set tc fields for describing trace cache
         this->size = assoc*numSets;
-        this->numInsns = numInsns;
-        this->numBBs = numBBs;
+        this->maxNumInsns = numInsns;
+        this->maxNumBBs = numBBs;
+
         // set tc fields for building a trace
         this->buildingTrace = 0;
         this->buildLineIndex = 0;
+        this->buildLine = new tcLine();
     }
 
-    // to be ran every instruction fetch
-    void tcInsnFetch(Addr fetchAddr, int isBranch, int branchPred){
+    // to be ran every instruction retire
+    void tcInsnRetire(Addr retireAddr, int isBranch, int branchResult){
         // get address from fetchAddr object
-        int addr = fetchAddr.addrValue;
+        int addr = retireAddr.addrValue;
 
         if (this->buildingTrace){ // if a trace is currently being built
             // add this instruction to that trace
-            this->addToTrace(addr, isBranch);
+            this->addToTrace(addr, isBranch, branchResult);
         }else{ // otherwise...
             // see if this instruction is in the trace cache
-            this->accessCache(addr, branchPred);
+            this->accessCache(addr, branchResult);
         }
     }
 
     // adds the instruction to the trace currently being built
-    void addToTrace(int addr, int isBranch){
+    void addToTrace(int addr, int isBranch, int branchResult){
         // add the instruction
-        this->line[this->buildLineIndex].insnCount =
-                this->line[this->buildLineIndex].insnCount +1;
+        this->buildLine->insnCount++;
 
         // handle case when current instruction is a branch
         if (isBranch){ // if the current insn is a branch insn
-
+            // add branch result to the build line's branch flags
+            branchResult = branchResult << this->buildLine->BBCount;
+            this->buildLine->branchFlags = this->buildLine->branchFlags | branchResult;
+            this->buildLine->BBCount++; // basic blocks end with branches
         }
 
         // check whether trace build is complete
+        // check if we have reached the max number of instructions
+        if((this->maxNumInsns == this->buildLine->insnCount) |
+           (this->maxNumBBs == this->buildLine->BBCount)){
+            this->completeTrace();
+        }
+    }
 
+    void completeTrace(){
+        // copy all buildLine values to the correct line in the tc
+        this->line[this->buildLineIndex].tag = this->buildLine->tag;
+        this->line[this->buildLineIndex].branchFlags = this->buildLine->branchFlags;
+        this->line[this->buildLineIndex].insnCount = this->buildLine->insnCount;
+        this->line[this->buildLineIndex].BBCount = this->buildLine->BBCount;
+        this->line[this->buildLineIndex].valid = 1;
+
+        // clear out all buildLine values
+        this->buildLine->tag = NULL;
+        this->buildLine->branchFlags = 0;
+        this->buildLine->insnCount = 0;
+        this->buildLine->BBCount = 0;
+
+        // no longer building a trace
+        this->buildingTrace = 0;
     }
 
     // check the cache for the current addr
-    int accessCache(int addr, int branchPred){
+    int accessCache(int addr, int branchResult){
         return 0;
     }
 
