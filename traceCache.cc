@@ -207,20 +207,76 @@ class traceCache
 
 };
 
+// FOR TESTING PURPOSES
+
+// dummy instruction class for testing
+class insn{
+    public:
+        int addr;
+        int isCondBranch;
+        int branchPred;
+
+    insn(){
+        this->addr = 0;
+        this->isCondBranch = 0;
+        this->branchPred = 0;
+    }
+};
+int nxtPC = 0;
+
+void createInsnStream(insn* insnStream, int size){
+    for(int i = 0; i < size; i++){
+        insnStream[i].addr=nxtPC;
+        if(i % 5 == 0){
+            insnStream[i].isCondBranch = 1;
+            insnStream[i].branchPred = 1;
+            nxtPC = nxtPC + 2048;
+        }else{
+            nxtPC = nxtPC + 1;
+        }
+    }
+}
+
+void printInsnStream(insn* insnStream, int size){
+    for(int i = 0; i < size; i++){
+        printf("Insn#: %d, Addr: %d, CondBranch: %d, Pred: %d\n", i, insnStream[i].addr, insnStream[i].isCondBranch, insnStream[i].branchPred);
+    }
+}
+
+void simulateInsnStream(insn* insnStream, int size, traceCache *tc){
+    for(int i = 0; i < size; i++){
+        tc->tcInsnFetch(insnStream[i].addr,insnStream[i].isCondBranch, insnStream[i].branchPred);
+    }
+}
+
 // just for basic sanity checks
 int main()
 {
-    int numSets = 16;
-    int assoc = 2;
+    // initialize trace cache
+    int numSets = 64;
+    int assoc = 1;
     int numInsns = 16;
-    int numBBs = 3;
+    int numBBs = 1;
     traceCache *tc = new traceCache(numSets,assoc, numInsns, numBBs);
+
+    // create instruction stream
+    int size = 30;
+    insn* insnStream  = new insn[size];
+    createInsnStream(insnStream, size);
+    printInsnStream(insnStream, size);
+
+    // simulate insn stream
+    simulateInsnStream(insnStream, size, tc);
+    simulateInsnStream(insnStream, size, tc);
 
     printf("trace cache size: %d\n", tc->size);
 
     for (int i = 0; i < tc->size; i++){
         printf("tc at %d: %d\n", i, tc->line[i].insnCount);
     }
+
+    printf("trace miss count: %d\n", tc->globalMissCount);
+    printf("trace hit count: %d\n", tc->globalHitCount);
 
     return 0;
 }
