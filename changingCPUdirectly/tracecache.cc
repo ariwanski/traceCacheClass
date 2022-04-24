@@ -207,9 +207,9 @@ class traceCache
     
     void printCacheState(){
       printf("******TRACE CACHE STATE******\n");
-      for (int i = 0; i < this->size; i++){
-        printf("Line %d: Instruction Count:%d Valid: %d, Branch Flags: %d\n", i, this->line[i].insnCount, this->line[i].valid, this->line[i].branchFlags);
-      }
+  //    for (int i = 0; i < this->size; i++){
+  //      printf("Line %d: Instruction Count:%d Valid: %d, Branch Flags: %d\n", i, this->line[i].insnCount, this->line[i].valid, this->line[i].branchFlags);
+  //    }
 
     printf("Current Miss Count: %d\n", this->globalMissCount);
     printf("Current Hit Count: %d\n", this->globalHitCount);
