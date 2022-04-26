@@ -393,12 +393,12 @@ BaseSimpleCPU::preExecute(PacketPtr pkt)
 	predictTakenSave = predict_taken;
     }
 
-    printf("AT END OF PREEXECUTE\n");
+//    printf("AT END OF PREEXECUTE\n");
     if(curStaticInst && pkt){
 	// print out current request fields
-	printf( "Complete ICache Fetch for addr %#lx\n", pkt ?  pkt->getAddr() : 0);
-        printf("branch prediction: %d\n", predictTakenSave);
-        printf("is control: %d\n", curStaticInst->isControl());
+//	printf( "Complete ICache Fetch for addr %#lx\n", pkt ?  pkt->getAddr() : 0);
+//        printf("branch prediction: %d\n", predictTakenSave);
+//        printf("is control: %d\n", curStaticInst->isControl());
 
 	// send this request to all trace caches
 	tc_dm->tcInsnFetch(pkt->getAddr(), curStaticInst->isControl(), predictTakenSave);

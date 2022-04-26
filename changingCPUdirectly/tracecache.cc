@@ -42,8 +42,9 @@ class traceCache
     tcLine* line;
     int    size; // size of the cache in terms of lines
     int    maxNumInsns; // max number of insns in one cache line
+    int    fetchInsnCount; // counter to count all the fetched instructions
     int    maxNumBBs = 1; // max number of basic blocks in one cache line
-
+//    float MissRate;
     // fields for building a trace in the trace cache
     int buildingTrace; // 1 = currently building a trace, 0 = otherwise
     int buildLineIndex; // hold line # is trace cache that trace
@@ -72,11 +73,14 @@ class traceCache
         // set tc fields for stats tracking
         this->globalHitCount = 0;
         this->globalMissCount = 0;
+        this->fetchInsnCount = 0;
+//        this->MissRate = 0;
     }
 
     // to be ran every instruction fetch
     void tcInsnFetch(uint64_t fetchAddr, int isCondBranch, int branchPred){
         int traceHit = 0;
+	this->fetchInsnCount++;
         // conditional branch instructions mark the beginning of a new trace
         if(isCondBranch){
             // complete the trace currently being built
@@ -206,23 +210,25 @@ class traceCache
     }
     
     void printCacheState(){
-      printf("******TRACE CACHE STATE******\n");
-  //    for (int i = 0; i < this->size; i++){
-  //      printf("Line %d: Instruction Count:%d Valid: %d, Branch Flags: %d\n", i, this->line[i].insnCount, this->line[i].valid, this->line[i].branchFlags);
-  //    }
-
-    printf("Current Miss Count: %d\n", this->globalMissCount);
-    printf("Current Hit Count: %d\n", this->globalHitCount);
+     if(this->fetchInsnCount>=100000000){
+	printf("No. of instructions fetched:%d\n",this->fetchInsnCount);
+      	printf("******TRACE CACHE STATE******\n");
+    	printf("Current Miss Count: %d\n", this->globalMissCount);
+    	printf("Current Hit Count: %d\n\n", this->globalHitCount);
+//	this->MissRate = (this->globalMissCount/(this->globalMissCount+this->globalHitCount))*100;
+//	printf("Current Miss Rate: %f",MissRate);
+    }
     }
     
     void printCacheParameters(){
+      if(this->fetchInsnCount>=100000000){
       printf("******TRACE CACHE PARAMS******\n");
       printf("Size: %d\n", this->size);
       printf("Number of Sets: %d\n", this->numSets);
       printf("Associativity: %d\n", this->assoc);
       printf("Max # of Insns Per Line: %d\n", this->maxNumInsns);
     }
-    
+    }
     void testCache(){
         printf("THIS IS FROM TRACE CACHE!!!\n");
     }
